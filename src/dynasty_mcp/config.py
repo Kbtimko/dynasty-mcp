@@ -38,7 +38,7 @@ def load_config(path: Path | None = None) -> Config:
 
     sleeper = raw.get("sleeper", {})
     username = sleeper.get("username")
-    if not username:
+    if not username or not str(username).strip():
         raise ConfigError("Missing required field: sleeper.username")
 
     values = raw.get("values", {})
@@ -47,11 +47,17 @@ def load_config(path: Path | None = None) -> Config:
     cache_path_raw = cache.get("path")
     cache_path = Path(cache_path_raw).expanduser() if cache_path_raw else _default_cache_path()
 
+    try:
+        players_refresh_days = int(cache.get("players_refresh_days", 7))
+        values_refresh_hours = int(cache.get("values_refresh_hours", 24))
+    except (TypeError, ValueError) as exc:
+        raise ConfigError(f"Invalid cache config value: {exc}") from exc
+
     return Config(
         sleeper_username=username,
         sleeper_league_id=sleeper.get("league_id"),
         values_source=values.get("source", "fantasycalc"),
         cache_path=cache_path,
-        players_refresh_days=int(cache.get("players_refresh_days", 7)),
-        values_refresh_hours=int(cache.get("values_refresh_hours", 24)),
+        players_refresh_days=players_refresh_days,
+        values_refresh_hours=values_refresh_hours,
     )

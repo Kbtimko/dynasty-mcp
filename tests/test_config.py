@@ -1,5 +1,4 @@
 from pathlib import Path
-import tomllib
 
 import pytest
 
@@ -57,3 +56,26 @@ def test_missing_username_raises(tmp_path: Path) -> None:
 def test_missing_file_raises(tmp_path: Path) -> None:
     with pytest.raises(ConfigError, match="not found"):
         load_config(tmp_path / "nope.toml")
+
+
+def test_whitespace_username_raises(tmp_path: Path) -> None:
+    cfg_file = tmp_path / "config.toml"
+    write_toml(cfg_file, '[sleeper]\nusername = "   "\n')
+    with pytest.raises(ConfigError, match="sleeper.username"):
+        load_config(cfg_file)
+
+
+def test_invalid_refresh_value_raises(tmp_path: Path) -> None:
+    cfg_file = tmp_path / "config.toml"
+    write_toml(
+        cfg_file,
+        """
+        [sleeper]
+        username = "alice"
+
+        [cache]
+        players_refresh_days = "not-a-number"
+        """,
+    )
+    with pytest.raises(ConfigError, match="Invalid cache config"):
+        load_config(cfg_file)

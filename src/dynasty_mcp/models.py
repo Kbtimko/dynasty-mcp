@@ -1,0 +1,66 @@
+from __future__ import annotations
+
+from enum import Enum
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+
+class SlotType(str, Enum):
+    ACTIVE = "active"
+    BENCH = "bench"
+    TAXI = "taxi"
+    IR = "ir"
+
+
+class Player(BaseModel):
+    player_id: str
+    full_name: str
+    position: str
+    team: str | None = None
+    age: int | None = None
+    status: str | None = None  # "Active", "IR", "Questionable", etc.
+
+
+class Value(BaseModel):
+    current: int | None
+    delta_7d: int | None = None
+    delta_30d: int | None = None
+
+
+class RosterEntry(BaseModel):
+    player: Player
+    slot_type: SlotType
+    value: Value
+    starter: bool = False
+    projection: float | None = None  # weekly points projection, set by get_matchup
+
+
+class RosterView(BaseModel):
+    roster_id: int
+    owner_username: str
+    owner_display_name: str | None = None
+    entries: list[RosterEntry]
+    total_value_active: int
+    total_value_taxi: int
+    total_value_ir: int
+
+
+class LeagueContext(BaseModel):
+    league_id: str
+    season: str
+    current_week: int
+    season_phase: Literal["pre", "regular", "post", "offseason"]
+    num_teams: int
+    num_qbs: int  # 1 or 2 (superflex)
+    ppr: float
+    roster_slots: dict[str, int]
+    taxi_slots: int
+    bench_slots: int
+    ir_slots: int
+    your_roster_id: int
+
+
+class StaleFlag(BaseModel):
+    stale: bool = False
+    as_of: str | None = None  # ISO-8601 UTC

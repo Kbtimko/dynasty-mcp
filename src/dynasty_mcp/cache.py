@@ -59,6 +59,8 @@ class Cache:
 
     # --- players ---
     def put_players(self, players: dict[str, Any], fetched_at: datetime) -> None:
+        if fetched_at.tzinfo is None:
+            raise ValueError("fetched_at must be timezone-aware")
         self.conn.execute(
             "INSERT OR REPLACE INTO players (id, data, fetched_at) VALUES (1, ?, ?)",
             (json.dumps(players), fetched_at.isoformat()),
@@ -83,6 +85,8 @@ class Cache:
     def put_values_snapshot(
         self, values: list[dict[str, Any]], fetched_at: datetime
     ) -> None:
+        if fetched_at.tzinfo is None:
+            raise ValueError("fetched_at must be timezone-aware")
         self.conn.execute(
             "INSERT INTO values_snapshots (fetched_at, data) VALUES (?, ?)",
             (fetched_at.isoformat(), json.dumps(values)),
@@ -110,6 +114,8 @@ class Cache:
     def put_league_snapshot(
         self, league_id: str, week: int, data: dict[str, Any], fetched_at: datetime
     ) -> None:
+        if fetched_at.tzinfo is None:
+            raise ValueError("fetched_at must be timezone-aware")
         self.conn.execute(
             """
             INSERT INTO league_snapshot (league_id, week, fetched_at, data)

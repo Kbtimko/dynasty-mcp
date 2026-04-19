@@ -53,3 +53,17 @@ def test_get_players_empty_returns_none(cache: Cache) -> None:
     got, fetched_at = cache.get_players()
     assert got is None
     assert fetched_at is None
+
+
+def test_put_players_rejects_naive_datetime(cache: Cache) -> None:
+    players = {"4046": {"full_name": "Patrick Mahomes", "position": "QB"}}
+    naive_dt = datetime.now()
+    with pytest.raises(ValueError, match="must be timezone-aware"):
+        cache.put_players(players, fetched_at=naive_dt)
+
+
+def test_put_values_snapshot_rejects_naive_datetime(cache: Cache) -> None:
+    values = [{"player_id": "4046", "value": 8500}]
+    naive_dt = datetime.now()
+    with pytest.raises(ValueError, match="must be timezone-aware"):
+        cache.put_values_snapshot(values, fetched_at=naive_dt)

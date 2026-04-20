@@ -6,7 +6,7 @@ import respx
 
 from dynasty_mcp.cache import Cache
 from dynasty_mcp.context import build_test_context
-from dynasty_mcp.tools.waivers import get_free_agents
+from dynasty_mcp.tools.waivers import get_free_agents, get_trending
 
 FIX = Path(__file__).parent.parent / "fixtures"
 
@@ -39,3 +39,18 @@ async def test_free_agents_excludes_rostered_players(ctx) -> None:
     }
     for row in fas:
         assert row.player.player_id not in rostered
+
+
+@pytest.mark.asyncio
+async def test_get_trending_add(ctx) -> None:
+    with respx.mock(base_url="https://api.sleeper.app/v1") as sleeper_mock:
+        sleeper_mock.get("/players/nfl").respond(json=load("sleeper_players.json"))
+        sleeper_mock.get("/players/nfl/trending/add").respond(
+            json=load("sleeper_trending_add.json")
+        )
+        trending = await get_trending(ctx, window="24h", type="add")
+
+    assert len(trending) > 0
+    for row in trending:
+        assert row.count > 0
+        assert row.player.full_name

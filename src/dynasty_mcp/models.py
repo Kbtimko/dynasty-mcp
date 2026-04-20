@@ -80,3 +80,8 @@ class TeamValueBreakdown(BaseModel):
     taxi_stash_value: int
     ir_value: int
     active_value: int
+
+
+class TrendingRow(BaseModel):
+    player: Player
+    count: int

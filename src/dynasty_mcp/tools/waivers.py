@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from dynasty_mcp.context import Context
 from dynasty_mcp.tools.rosters import _player_from_sleeper, _value_map
 from dynasty_mcp.tools.values import PlayerValueRow
-from dynasty_mcp.models import Value
+from dynasty_mcp.models import TrendingRow, Value
 
 
 async def get_free_agents(
@@ -45,3 +47,28 @@ async def get_free_agents(
         if len(rows) >= limit:
             break
     return rows
+
+
+async def get_trending(
+    ctx: Context,
+    *,
+    window: Literal["24h", "7d"] = "24h",
+    type: Literal["add", "drop"] = "add",
+    limit: int = 25,
+) -> list[TrendingRow]:
+    lookback = 24 if window == "24h" else 24 * 7
+    raw = await ctx.sleeper.get_trending(type, lookback_hours=lookback, limit=limit)
+    players = await ctx.sleeper.get_players()
+    out: list[TrendingRow] = []
+    for row in raw:
+        pid = str(row.get("player_id") or "")
+        data = players.get(pid)
+        if data is None:
+            continue
+        out.append(
+            TrendingRow(
+                player=_player_from_sleeper(pid, data),
+                count=int(row.get("count") or 0),
+            )
+        )
+    return out

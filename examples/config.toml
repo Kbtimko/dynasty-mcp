@@ -1,0 +1,12 @@
+[sleeper]
+username = "your_sleeper_username"
+# league_id is optional if your user has exactly one NFL league this season
+# league_id = "123456789012345678"
+
+[values]
+source = "fantasycalc"
+
+[cache]
+# path defaults to ~/Library/Application Support/dynasty-mcp/cache.db on macOS
+players_refresh_days = 7
+values_refresh_hours = 24

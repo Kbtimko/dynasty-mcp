@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from dynasty_mcp.context import Context
-from dynasty_mcp.models import Player, RosterEntry, RosterView, SlotType, Value
+from dynasty_mcp.models import Player, RosterEntry, RosterSummary, RosterView, SlotType, TeamValueBreakdown, Value
 
 
 TeamSpec = int | str  # "me" | roster_id | username
@@ -127,4 +127,66 @@ async def get_roster(ctx: Context, *, team: TeamSpec = "me") -> RosterView:
         total_value_active=total_active,
         total_value_taxi=total_taxi,
         total_value_ir=total_ir,
+    )
+
+
+async def list_rosters(ctx: Context) -> list[RosterSummary]:
+    if not ctx.league_id:
+        raise ValueError("league_id required")
+    league = await ctx.sleeper.get_league(ctx.league_id)
+    rosters = await ctx.sleeper.get_rosters(league_id=ctx.league_id)
+    users = await ctx.sleeper.get_league_users(ctx.league_id)
+    players = await ctx.sleeper.get_players()
+    fc = await ctx.fantasycalc.get_current(league)
+    values = _value_map(fc)
+
+    by_user = {u["user_id"]: u for u in users}
+    out: list[RosterSummary] = []
+    for r in rosters:
+        pids = r.get("players") or []
+        total = sum(values.get(pid, 0) for pid in pids)
+        ranked = sorted(pids, key=lambda pid: values.get(pid, 0), reverse=True)[:5]
+        top = [
+            _player_from_sleeper(pid, players.get(pid, {})).full_name
+            for pid in ranked
+        ]
+        owner = by_user.get(r.get("owner_id"), {})
+        out.append(
+            RosterSummary(
+                roster_id=int(r["roster_id"]),
+                owner_username=owner.get("username") or owner.get("display_name") or "",
+                total_value=total,
+                top_assets=top,
+            )
+        )
+    return out
+
+
+def _age_cohort(age: int | None) -> str:
+    if age is None:
+        return "unknown"
+    if age < 25:
+        return "under_25"
+    if age <= 28:
+        return "25_28"
+    return "29_plus"
+
+
+async def get_team_value_breakdown(
+    ctx: Context, *, team: TeamSpec = "me"
+) -> TeamValueBreakdown:
+    view = await get_roster(ctx, team=team)
+    by_pos: dict[str, int] = {}
+    by_age: dict[str, int] = {"under_25": 0, "25_28": 0, "29_plus": 0, "unknown": 0}
+    for entry in view.entries:
+        val = entry.value.current or 0
+        by_pos[entry.player.position] = by_pos.get(entry.player.position, 0) + val
+        by_age[_age_cohort(entry.player.age)] += val
+    return TeamValueBreakdown(
+        roster_id=view.roster_id,
+        by_position=by_pos,
+        by_age_cohort=by_age,
+        taxi_stash_value=view.total_value_taxi,
+        ir_value=view.total_value_ir,
+        active_value=view.total_value_active,
     )

@@ -64,3 +64,19 @@ class LeagueContext(BaseModel):
 class StaleFlag(BaseModel):
     stale: bool = False
     as_of: str | None = None  # ISO-8601 UTC
+
+
+class RosterSummary(BaseModel):
+    roster_id: int
+    owner_username: str
+    total_value: int
+    top_assets: list[str]  # player names
+
+
+class TeamValueBreakdown(BaseModel):
+    roster_id: int
+    by_position: dict[str, int]
+    by_age_cohort: dict[str, int]  # keys: under_25, 25_28, 29_plus, unknown
+    taxi_stash_value: int
+    ir_value: int
+    active_value: int

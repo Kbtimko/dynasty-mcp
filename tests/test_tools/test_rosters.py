@@ -7,7 +7,7 @@ import respx
 from dynasty_mcp.cache import Cache
 from dynasty_mcp.context import build_test_context
 from dynasty_mcp.models import SlotType
-from dynasty_mcp.tools.rosters import get_roster
+from dynasty_mcp.tools.rosters import get_roster, get_team_value_breakdown, list_rosters
 
 FIX = Path(__file__).parent.parent / "fixtures"
 
@@ -67,3 +67,33 @@ async def test_get_roster_unknown_raises(ctx) -> None:
         await _seed(sleeper_mock)
         with pytest.raises(ValueError, match="team"):
             await get_roster(ctx, team="nobody_like_this")
+
+
+@pytest.mark.asyncio
+async def test_list_rosters(ctx) -> None:
+    with respx.mock(base_url="https://api.sleeper.app/v1") as sleeper_mock, respx.mock(
+        base_url="https://api.fantasycalc.com"
+    ) as fc_mock:
+        await _seed(sleeper_mock)
+        fc_mock.get("/values/current").respond(json=load("fantasycalc_values.json"))
+        summaries = await list_rosters(ctx)
+
+    assert len(summaries) >= 1
+    for s in summaries:
+        assert s.roster_id
+        assert s.total_value >= 0
+        assert len(s.top_assets) <= 5
+
+
+@pytest.mark.asyncio
+async def test_team_value_breakdown_has_age_cohorts(ctx) -> None:
+    with respx.mock(base_url="https://api.sleeper.app/v1") as sleeper_mock, respx.mock(
+        base_url="https://api.fantasycalc.com"
+    ) as fc_mock:
+        await _seed(sleeper_mock)
+        fc_mock.get("/values/current").respond(json=load("fantasycalc_values.json"))
+        breakdown = await get_team_value_breakdown(ctx, team="me")
+
+    # Expect keys for age cohorts and positions
+    assert set(breakdown.by_age_cohort.keys()) >= {"under_25", "25_28", "29_plus"}
+    assert "taxi_stash_value" in breakdown.model_dump()

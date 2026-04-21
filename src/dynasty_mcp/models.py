@@ -125,3 +125,30 @@ class ResetOptimizerResult(BaseModel):
     options: list[SlateOption]
     taxi_pool_size: int
     notes: list[str]
+
+
+class TradeAsset(BaseModel):
+    kind: Literal["player", "pick"]
+    asset_id: str
+    display_name: str
+    raw_value: int
+    reset_adjusted_value: int
+    protectable_on_receiver: bool
+
+
+class TradeProposal(BaseModel):
+    rank: int
+    partner_roster_id: int
+    partner_username: str
+    my_send: list[TradeAsset]
+    my_recv: list[TradeAsset]
+    my_net_edge: int
+    partner_net_edge: int
+    rationale_flags: list[str]
+
+
+class ResetTradeFinderResult(BaseModel):
+    reset_probability: float
+    proposals: list[TradeProposal]
+    considered_partners: list[int]
+    notes: list[str]

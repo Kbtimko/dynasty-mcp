@@ -271,9 +271,11 @@ def test_pick_value_future_year_discounted_by_probability():
 
 
 def test_pick_value_truncates_to_int():
-    """int() truncates (does not round)."""
+    """int() truncates (does not round) the discount result."""
+    # 1000 * (1 - 0.3) = 700.0 — exact, confirms basic formula
     assert pick_value_under_reset("2026", 1, probability=0.3, current_season="2025", base_value=1000) == 700
-    assert pick_value_under_reset("2026", 2, probability=0.333, current_season="2025", base_value=1000) == 667
+    # 1000 * (1 - 0.3334) = 666.6; int() truncates to 666, round() would give 667
+    assert pick_value_under_reset("2026", 1, probability=0.3334, current_season="2025", base_value=1000) == 666
 
 
 # --- asset_value_under_reset ---

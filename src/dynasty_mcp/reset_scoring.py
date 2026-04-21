@@ -95,7 +95,7 @@ def value_at_risk(entries: list[RosterEntry], slate: ProtectionSlate) -> int:
 
 def pick_value_under_reset(
     season: str,
-    round_: int,
+    round_: int,  # reserved — round-based weighting not yet implemented
     probability: float,
     current_season: str,
     base_value: int,

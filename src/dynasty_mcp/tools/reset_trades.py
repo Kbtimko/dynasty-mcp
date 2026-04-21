@@ -157,6 +157,8 @@ def _protection_change_flags(
     base_slots: dict[str, str],
     post_slots: dict[str, str],
 ) -> list[str]:
+    if not post_slots:
+        return []
     flags = []
     for slot in ("qb", "rb_te", "wr_te"):
         if base_slots.get(slot) != post_slots.get(slot):
@@ -283,9 +285,8 @@ async def reset_trades(
     my_base_slate = my_base_slate_list[0] if my_base_slate_list else None
     my_base_slot_map = _slate_slot_map(my_base_slate)
 
-    my_players_sorted = sorted(my_entries, key=lambda e: e.value.current or 0, reverse=True)[:15]
     my_combined: list[_Asset] = (
-        [_PlayerAsset(entry=e, owner_id=my_roster_id) for e in my_players_sorted]
+        [_PlayerAsset(entry=e, owner_id=my_roster_id) for e in my_entries]
         + my_picks
     )
     my_combined.sort(key=_asset_raw_value, reverse=True)
@@ -301,15 +302,22 @@ async def reset_trades(
         their_username = their_user.get("username") or their_user.get("display_name") or ""
         their_entries = build_valued_entries(their_roster_raw)
         their_picks = [p for p in all_picks if p.owner_id == their_roster_id]
-        their_players_sorted = sorted(
-            their_entries, key=lambda e: e.value.current or 0, reverse=True
-        )[:15]
         their_combined: list[_Asset] = (
-            [_PlayerAsset(entry=e, owner_id=their_roster_id) for e in their_players_sorted]
+            [_PlayerAsset(entry=e, owner_id=their_roster_id) for e in their_entries]
             + their_picks
         )
         their_combined.sort(key=_asset_raw_value, reverse=True)
         their_pool = their_combined[:15]
+
+        # Pre-compute outgoing values (constant per-partner — don't recompute in inner loop)
+        my_outgoing_map = {
+            id(a): _asset_outgoing_value(a, my_entries, reset_probability, current_year)
+            for a in my_pool
+        }
+        their_outgoing_map = {
+            id(a): _asset_outgoing_value(a, their_entries, reset_probability, current_year)
+            for a in their_pool
+        }
 
         for send_size in range(1, max_send + 1):
             for recv_size in range(1, max_recv + 1):
@@ -332,18 +340,12 @@ async def reset_trades(
                             + [a.entry for a in send_combo if isinstance(a, _PlayerAsset)]
                         )
 
-                        my_outgoing = sum(
-                            _asset_outgoing_value(a, my_entries, reset_probability, current_year)
-                            for a in send_combo
-                        )
+                        my_outgoing = sum(my_outgoing_map[id(a)] for a in send_combo)
                         my_incoming = sum(
                             _asset_incoming_value(a, my_post_entries, reset_probability, current_year)
                             for a in recv_combo
                         )
-                        their_outgoing = sum(
-                            _asset_outgoing_value(a, their_entries, reset_probability, current_year)
-                            for a in recv_combo
-                        )
+                        their_outgoing = sum(their_outgoing_map[id(a)] for a in recv_combo)
                         their_incoming = sum(
                             _asset_incoming_value(a, their_post_entries, reset_probability, current_year)
                             for a in send_combo

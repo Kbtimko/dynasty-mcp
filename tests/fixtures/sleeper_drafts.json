@@ -1,0 +1,49 @@
+[
+  {
+    "created": 1772729367611,
+    "creators": [
+      "468608295322513408"
+    ],
+    "draft_id": "1335327387272871936",
+    "draft_order": null,
+    "last_message_id": "1335327387272871936",
+    "last_message_time": 1772729367611,
+    "last_picked": null,
+    "league_id": "1335327387256119296",
+    "metadata": {
+      "description": "",
+      "hovered_player_id": "7562",
+      "name": "The First Galactic Empire",
+      "scoring_type": "dynasty_2qb"
+    },
+    "season": "2026",
+    "season_type": "regular",
+    "settings": {
+      "alpha_sort": 0,
+      "autopause_enabled": 0,
+      "autopause_end_time": 900,
+      "autopause_start_time": 180,
+      "autostart": 1,
+      "cpu_autopick": 1,
+      "enforce_position_limits": 0,
+      "nomination_timer": 30,
+      "pick_timer": 86400,
+      "player_type": 0,
+      "position_limit_k": 1,
+      "reversal_round": 0,
+      "rounds": 5,
+      "slots_bn": 14,
+      "slots_flex": 2,
+      "slots_qb": 1,
+      "slots_rb": 2,
+      "slots_super_flex": 1,
+      "slots_te": 1,
+      "slots_wr": 2,
+      "teams": 14
+    },
+    "sport": "nfl",
+    "start_time": null,
+    "status": "pre_draft",
+    "type": "linear"
+  }
+]

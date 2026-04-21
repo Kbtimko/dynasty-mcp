@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from itertools import zip_longest
+
 from dynasty_mcp.context import Context
 from dynasty_mcp.models import (
     ProtectionSlot,
@@ -92,14 +94,16 @@ async def reset_optimizer(
                 slate_taxi_map = {t.player.player_id: t for t in slate.taxi}
                 removed = sorted(r1_taxi_ids - slate_taxi_ids)
                 added = sorted(slate_taxi_ids - r1_taxi_ids)
-                for removed_id, added_id in zip(removed, added):
+                for removed_id, added_id in zip_longest(removed, added, fillvalue=""):
                     swaps.append(
                         Swap(
                             slot=ProtectionSlot.TAXI,
-                            from_player=removed_id,
-                            to_player=added_id,
-                            value_delta=(slate_taxi_map[added_id].value.current or 0)
-                            - (rank1_taxi_map[removed_id].value.current or 0),
+                            from_player=removed_id or "",
+                            to_player=added_id or "",
+                            value_delta=(
+                                (slate_taxi_map[added_id].value.current or 0 if added_id else 0)
+                                - (rank1_taxi_map[removed_id].value.current or 0 if removed_id else 0)
+                            ),
                         )
                     )
         options.append(

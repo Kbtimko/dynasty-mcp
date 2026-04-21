@@ -10,3 +10,14 @@ source = "fantasycalc"
 # path defaults to ~/Library/Application Support/dynasty-mcp/cache.db on macOS
 players_refresh_days = 7
 values_refresh_hours = 24
+
+# [server] controls transport mode.
+# Omit (or set transport = "stdio") for local Claude Code use.
+# Set transport = "http" for deployed/remote use (e.g. Fly.io).
+# All values can also be set via env vars: DYNASTY_TRANSPORT, DYNASTY_HOST, DYNASTY_PORT
+# Sleeper credentials: SLEEPER_USERNAME, SLEEPER_LEAGUE_ID
+[server]
+# transport = "stdio"   # default — use for local Claude Code
+# transport = "http"    # use for Fly.io / remote deployment
+# host = "0.0.0.0"
+# port = 8000

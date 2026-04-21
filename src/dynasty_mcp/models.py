@@ -85,3 +85,43 @@ class TeamValueBreakdown(BaseModel):
 class TrendingRow(BaseModel):
     player: Player
     count: int
+
+
+class ProtectionSlot(str, Enum):
+    QB = "qb"
+    RB_TE = "rb_te"
+    WR_TE = "wr_te"
+    TAXI = "taxi"
+
+
+class ProtectionSlate(BaseModel):
+    qb: RosterEntry
+    rb_te: RosterEntry
+    wr_te: RosterEntry
+    taxi: list[RosterEntry]  # len ≤ 3
+    protected_value: int
+
+
+class Swap(BaseModel):
+    slot: ProtectionSlot
+    from_player: str   # player_id in rank-1 slate
+    to_player: str     # player_id in this slate
+    value_delta: int   # (to.value - from.value); negative for rank ≥ 2
+
+
+class SlateOption(BaseModel):
+    rank: int
+    protected: ProtectionSlate
+    protected_value: int
+    value_at_risk: int
+    swaps_from_top: list[Swap]  # empty for rank 1
+
+
+class ResetOptimizerResult(BaseModel):
+    roster_id: int
+    owner_username: str
+    reset_probability: float
+    total_roster_value: int
+    options: list[SlateOption]
+    taxi_pool_size: int
+    notes: list[str]

@@ -191,3 +191,59 @@ def test_rank_slates_deterministic_tiebreak():
     # tiebreak: sorted(["qb1","rb1","wr1"]) < sorted(["qb2","rb1","wr1"])
     assert slates[0].qb.player.player_id == "qb1"
     assert slates[1].qb.player.player_id == "qb2"
+
+
+# --- value_at_risk ---
+
+from dynasty_mcp.reset_scoring import value_at_risk
+
+
+def test_value_at_risk_unprotected_player_sum():
+    """One unprotected player contributes their value to risk."""
+    entries = [
+        make_entry("qb1", "QB", 3000),
+        make_entry("rb1", "RB", 2000),
+        make_entry("wr1", "WR", 1500),
+        make_entry("rb2", "RB", 500),  # not in rank-1 slate
+    ]
+    slate = rank_slates(entries, n=1)[0]
+    assert value_at_risk(entries, slate) == 500
+
+
+def test_value_at_risk_none_value_contributes_zero():
+    """Entry with value=None in risk pool contributes 0."""
+    entries = [
+        make_entry("qb1", "QB", 3000),
+        make_entry("rb1", "RB", 2000),
+        make_entry("wr1", "WR", 1500),
+        make_entry("rb2", "RB", None),  # unprotected, None value
+    ]
+    slate = rank_slates(entries, n=1)[0]
+    assert value_at_risk(entries, slate) == 0
+
+
+def test_value_at_risk_all_protected_is_zero():
+    """Roster exactly fits one slate → nothing at risk."""
+    entries = [
+        make_entry("qb1", "QB", 1000),
+        make_entry("rb1", "RB", 800),
+        make_entry("wr1", "WR", 700),
+    ]
+    slate = rank_slates(entries, n=1)[0]
+    assert value_at_risk(entries, slate) == 0
+
+
+def test_value_at_risk_includes_taxi_not_in_slate():
+    """TAXI players not chosen for protection count toward risk."""
+    entries = [
+        make_entry("qb1", "QB", 3000),
+        make_entry("rb1", "RB", 2000),
+        make_entry("wr1", "WR", 1500),
+        make_entry("t1", "WR", 400, SlotType.TAXI),
+        make_entry("t2", "WR", 300, SlotType.TAXI),
+        make_entry("t3", "WR", 200, SlotType.TAXI),
+        make_entry("t4", "WR", 100, SlotType.TAXI),  # 4th taxi — can't all be protected
+    ]
+    # rank-1 slate fills 3 taxi slots: t1+t2+t3=900; t4 is at risk
+    slate = rank_slates(entries, n=1)[0]
+    assert value_at_risk(entries, slate) == 100

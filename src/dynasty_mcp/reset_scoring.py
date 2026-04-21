@@ -76,3 +76,18 @@ def rank_slates(entries: list[RosterEntry], *, n: int = 5) -> list[ProtectionSla
     all_slates = list(enumerate_slates(entries))
     all_slates.sort(key=_slate_sort_key)
     return all_slates[:n]
+
+
+def value_at_risk(entries: list[RosterEntry], slate: ProtectionSlate) -> int:
+    """Sum of value.current (None → 0) for every entry NOT in the protection slate."""
+    protected_ids = {
+        slate.qb.player.player_id,
+        slate.rb_te.player.player_id,
+        slate.wr_te.player.player_id,
+        *[t.player.player_id for t in slate.taxi],
+    }
+    return sum(
+        e.value.current or 0
+        for e in entries
+        if e.player.player_id not in protected_ids
+    )

@@ -36,5 +36,6 @@ async def test_server_registers_expected_tools(tmp_path: Path) -> None:
         "get_transactions",
         "get_draft",
         "refresh_cache",
+        "reset_optimizer",
     }
     assert expected <= names

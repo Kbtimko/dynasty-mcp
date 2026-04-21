@@ -9,6 +9,7 @@ from dynasty_mcp.tools.admin import refresh_cache as tool_refresh_cache
 from dynasty_mcp.tools.draft import get_draft as tool_get_draft
 from dynasty_mcp.tools.league import get_league_context as tool_get_league_context
 from dynasty_mcp.tools.matchups import get_matchup as tool_get_matchup
+from dynasty_mcp.tools.reset_optimizer import reset_optimizer as tool_reset_optimizer
 from dynasty_mcp.tools.rosters import (
     get_roster as tool_get_roster,
     get_team_value_breakdown as tool_get_team_value_breakdown,
@@ -92,5 +93,25 @@ def build_server(ctx: Context) -> FastMCP:
         what: Literal["players", "values", "all"] = "all",
     ) -> Any:
         return (await tool_refresh_cache(ctx, what=what)).model_dump(mode="json")
+
+    @mcp.tool()
+    async def reset_optimizer(
+        team: str | int = "me",
+        reset_probability: float = 1.0,
+        top_n: int = 5,
+    ) -> Any:
+        """Compute the optimal reset-protection slate for a team.
+
+        Returns top-N slates (default 5) ranked by protected_value with per-slot
+        swap deltas and value_at_risk so you can evaluate trade-offs at a glance.
+        """
+        return (
+            await tool_reset_optimizer(
+                ctx,
+                team=team,
+                reset_probability=reset_probability,
+                top_n=top_n,
+            )
+        ).model_dump(mode="json")
 
     return mcp

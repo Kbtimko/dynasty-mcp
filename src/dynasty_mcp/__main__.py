@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 
 from dynasty_mcp.cache import Cache
-from dynasty_mcp.config import load_config
+from dynasty_mcp.config import ConfigError, load_config
 from dynasty_mcp.context import Context
 from dynasty_mcp.server import build_server
 from dynasty_mcp.sources.fantasycalc import FantasyCalcClient
@@ -12,6 +12,8 @@ from dynasty_mcp.sources.sleeper import SleeperClient
 
 async def _resolve_league_id(sleeper: SleeperClient, username: str, season: str) -> str:
     user = await sleeper.get_user(username)
+    if user is None:
+        raise ConfigError(f"Sleeper has no user {username!r}")
     leagues = await sleeper.get_user_leagues(user["user_id"], season)
     if len(leagues) == 1:
         return leagues[0]["league_id"]

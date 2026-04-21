@@ -7,7 +7,13 @@ from dynasty_mcp.models import (
     SlotType,
     Value,
 )
-from dynasty_mcp.reset_scoring import enumerate_slates, rank_slates
+from dynasty_mcp.reset_scoring import (
+    asset_value_under_reset,
+    enumerate_slates,
+    pick_value_under_reset,
+    rank_slates,
+    value_at_risk,
+)
 
 
 def make_entry(
@@ -195,8 +201,6 @@ def test_rank_slates_deterministic_tiebreak():
 
 # --- value_at_risk ---
 
-from dynasty_mcp.reset_scoring import value_at_risk
-
 
 def test_value_at_risk_unprotected_player_sum():
     """One unprotected player contributes their value to risk."""
@@ -247,3 +251,97 @@ def test_value_at_risk_includes_taxi_not_in_slate():
     # rank-1 slate fills 3 taxi slots: t1+t2+t3=900; t4 is at risk
     slate = rank_slates(entries, n=1)[0]
     assert value_at_risk(entries, slate) == 100
+
+
+# --- pick_value_under_reset ---
+
+
+def test_pick_value_current_year_unaffected_by_probability():
+    """Current-year picks keep full base_value regardless of reset probability."""
+    assert pick_value_under_reset("2025", 1, probability=1.0, current_season="2025", base_value=3000) == 3000
+    assert pick_value_under_reset("2025", 1, probability=0.5, current_season="2025", base_value=3000) == 3000
+    assert pick_value_under_reset("2025", 1, probability=0.0, current_season="2025", base_value=3000) == 3000
+
+
+def test_pick_value_future_year_discounted_by_probability():
+    """Future picks: base_value * (1 - probability), integer truncated."""
+    assert pick_value_under_reset("2026", 1, probability=0.0, current_season="2025", base_value=3000) == 3000
+    assert pick_value_under_reset("2026", 1, probability=0.5, current_season="2025", base_value=3000) == 1500
+    assert pick_value_under_reset("2026", 1, probability=1.0, current_season="2025", base_value=3000) == 0
+
+
+def test_pick_value_truncates_to_int():
+    """int() truncates (does not round)."""
+    assert pick_value_under_reset("2026", 1, probability=0.3, current_season="2025", base_value=1000) == 700
+    assert pick_value_under_reset("2026", 2, probability=0.333, current_season="2025", base_value=1000) == 667
+
+
+# --- asset_value_under_reset ---
+
+
+def test_asset_value_unprotectable_player_at_p1_is_zero():
+    """4th RB: contributes 0 to any slate, so protected_contribution=0 → reset_value=0 at p=1."""
+    entries = [
+        make_entry("qb1", "QB", 3000),
+        make_entry("rb1", "RB", 2000),
+        make_entry("wr1", "WR", 1800),
+        make_entry("rb2", "RB", 500),  # won't be chosen for any starter/taxi slot
+    ]
+    val = asset_value_under_reset(entries[3], entries, probability=1.0)
+    assert val == 0
+
+
+def test_asset_value_unprotectable_player_at_p0_is_raw():
+    """Same player at p=0: no reset discount, keeps raw value."""
+    entries = [
+        make_entry("qb1", "QB", 3000),
+        make_entry("rb1", "RB", 2000),
+        make_entry("wr1", "WR", 1800),
+        make_entry("rb2", "RB", 500),
+    ]
+    val = asset_value_under_reset(entries[3], entries, probability=0.0)
+    assert val == 500
+
+
+def test_asset_value_marginal_taxi_contributes_its_own_value():
+    """3rd TAXI slot: protected_contribution = its own value when it's the marginal taxi."""
+    entries = [
+        make_entry("qb1", "QB", 3000),
+        make_entry("rb1", "RB", 2000),
+        make_entry("wr1", "WR", 1800),
+        make_entry("t1", "WR", 1000, SlotType.TAXI),
+        make_entry("t2", "RB", 800, SlotType.TAXI),
+        make_entry("t3", "WR", 600, SlotType.TAXI),  # fills 3rd slot exactly
+    ]
+    # best_with: 3000+2000+1800 + 1000+800+600 = 9200
+    # best_without t3: 3000+2000+1800 + 1000+800 = 8600
+    # protected_contribution = 600 = raw; at p=1: reset_value = 600
+    val = asset_value_under_reset(entries[5], entries, probability=1.0)
+    assert val == 600
+
+
+def test_asset_value_no_valid_slate_without_entry():
+    """Sole QB: best_without=0 (no valid slate), protected_contribution includes others' value."""
+    entries = [
+        make_entry("qb1", "QB", 1000),
+        make_entry("rb1", "RB", 800),
+        make_entry("wr1", "WR", 700),
+    ]
+    # best_with: 2500; best_without: 0 (no QB); protected_contribution = 2500
+    # raw = 1000; at p=1: int(1.0 * 2500 + 0 * 1000) = 2500
+    val = asset_value_under_reset(entries[0], entries, probability=1.0)
+    assert val == 2500
+
+
+def test_asset_value_interpolates_at_half_probability():
+    """At p=0.5, result is weighted combination of protected_contribution and raw."""
+    entries = [
+        make_entry("qb1", "QB", 3000),
+        make_entry("rb1", "RB", 2000),
+        make_entry("wr1", "WR", 1800),
+        make_entry("rb2", "RB", 500),  # unprotectable
+    ]
+    # protected_contribution = 0, raw = 500
+    # reset_value = int(0.5 * 0 + 0.5 * 500) = 250
+    val = asset_value_under_reset(entries[3], entries, probability=0.5)
+    assert val == 250

@@ -91,3 +91,43 @@ def value_at_risk(entries: list[RosterEntry], slate: ProtectionSlate) -> int:
         for e in entries
         if e.player.player_id not in protected_ids
     )
+
+
+def pick_value_under_reset(
+    season: str,
+    round_: int,
+    probability: float,
+    current_season: str,
+    base_value: int,
+) -> int:
+    """Return reset-adjusted value for a draft pick.
+
+    Current-year picks (season == current_season) are never voided; returns base_value.
+    Future-year picks are discounted by probability: int(base_value * (1 - probability)).
+    """
+    if season == current_season:
+        return base_value
+    return int(base_value * (1 - probability))
+
+
+def asset_value_under_reset(
+    entry: RosterEntry,
+    owner_entries: list[RosterEntry],
+    probability: float,
+) -> int:
+    """Compute reset-aware value for a player asset on a given roster.
+
+    protected_contribution = max(0, best_slate_with_player - best_slate_without_player).
+    reset_value = int(probability * protected_contribution + (1 - probability) * raw).
+    """
+    without = [e for e in owner_entries if e.player.player_id != entry.player.player_id]
+
+    best_with_slates = rank_slates(owner_entries, n=1)
+    best_without_slates = rank_slates(without, n=1)
+
+    best_with = best_with_slates[0].protected_value if best_with_slates else 0
+    best_without = best_without_slates[0].protected_value if best_without_slates else 0
+
+    protected_contribution = max(0, best_with - best_without)
+    raw = entry.value.current or 0
+    return int(probability * protected_contribution + (1 - probability) * raw)

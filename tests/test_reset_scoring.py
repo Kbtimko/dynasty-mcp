@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from dynasty_mcp.models import (
     Player,
     ProtectionSlate,
@@ -111,10 +109,15 @@ def test_enumerate_slates_no_player_double_counted():
     """No player appears in more than one slot per slate."""
     entries = [
         make_entry("qb1", "QB", 1000),
-        make_entry("te1", "TE", 900, SlotType.TAXI),
+        make_entry("te1", "TE", 900, SlotType.TAXI),  # TAXI TE: eligible for rb_te and taxi
         make_entry("wr1", "WR", 700),
     ]
     slates = list(enumerate_slates(entries))
+    # te1 eligible for rb_te AND taxi_pool — but cannot be in both.
+    # Only valid: qb=qb1, rb_te=te1, wr_te=wr1, taxi=[] (te1 chosen as starter, not taxi)
+    assert len(slates) == 1
+    assert slates[0].rb_te.player.player_id == "te1"
+    assert slates[0].taxi == []
     for s in slates:
         ids_used = (
             [s.qb.player.player_id, s.rb_te.player.player_id, s.wr_te.player.player_id]
@@ -172,13 +175,19 @@ def test_rank_slates_n_larger_than_available_returns_all():
 
 
 def test_rank_slates_deterministic_tiebreak():
-    """Equal protected_value → order is deterministic across calls."""
+    """Equal protected_value → ordered by sorted player_id tuple ascending."""
+    # Two QBs with same value → two slates with equal protected_value
+    # qb1 and qb2 both have value 1000; both produce slate with protected_value = 2500
+    # tiebreak: sorted([qb_id, "rb1", "wr1"]); "qb1" < "qb2" lexicographically
     entries = [
         make_entry("qb1", "QB", 1000),
+        make_entry("qb2", "QB", 1000),
         make_entry("rb1", "RB", 800),
         make_entry("wr1", "WR", 700),
     ]
-    run1 = rank_slates(entries, n=5)
-    run2 = rank_slates(entries, n=5)
-    assert [s.protected_value for s in run1] == [s.protected_value for s in run2]
-    assert [s.qb.player.player_id for s in run1] == [s.qb.player.player_id for s in run2]
+    slates = rank_slates(entries, n=5)
+    assert len(slates) == 2
+    assert slates[0].protected_value == slates[1].protected_value == 2500
+    # tiebreak: sorted(["qb1","rb1","wr1"]) < sorted(["qb2","rb1","wr1"])
+    assert slates[0].qb.player.player_id == "qb1"
+    assert slates[1].qb.player.player_id == "qb2"

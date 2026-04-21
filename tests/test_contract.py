@@ -49,3 +49,20 @@ async def test_live_my_roster_returns_players(tmp_path: Path) -> None:
     )
     view = await get_roster(ctx, team="me")
     assert view.entries
+
+
+@pytest.mark.asyncio
+async def test_live_reset_optimizer_returns_options(tmp_path: Path) -> None:
+    from dynasty_mcp.tools.reset_optimizer import reset_optimizer
+
+    username = os.environ["SLEEPER_USERNAME"]
+    league_id = os.environ["SLEEPER_LEAGUE_ID"]
+    cache = Cache.open(tmp_path / "live.db")
+    ctx = build_test_context(
+        cache=cache, username=username, league_id=league_id, season=os.environ.get("SEASON", "2025")
+    )
+    result = await reset_optimizer(ctx)
+    assert result.options, "expected at least one slate option"
+    assert result.options[0].protected_value > 0
+    assert result.options == sorted(result.options, key=lambda o: o.protected_value, reverse=True)
+    result.model_dump(mode="json")

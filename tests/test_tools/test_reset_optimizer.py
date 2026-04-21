@@ -126,3 +126,19 @@ async def test_reset_optimizer_result_is_serializable(ctx) -> None:
     dumped = result.model_dump(mode="json")
     assert isinstance(dumped["options"], list)
     assert "protected" in dumped["options"][0]
+
+
+@pytest.mark.asyncio
+async def test_reset_optimizer_no_duplicate_swap_targets(ctx) -> None:
+    with respx.mock(base_url="https://api.sleeper.app/v1") as sm, respx.mock(
+        base_url="https://api.fantasycalc.com"
+    ) as fm:
+        await _seed(sm)
+        fm.get("/values/current").respond(json=load("fantasycalc_values.json"))
+        result = await reset_optimizer(ctx)
+
+    for option in result.options:
+        to_players = [s.to_player for s in option.swaps_from_top]
+        assert len(to_players) == len(set(to_players)), (
+            f"Duplicate swap targets in rank {option.rank}: {to_players}"
+        )

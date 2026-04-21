@@ -31,6 +31,10 @@ async def reset_optimizer(
         else:
             valued_entries.append(entry)
 
+    # reset_probability does not affect slate ranking — optimizer always picks the slate
+    # that maximizes protected value assuming a reset occurs. Probability weighting is the
+    # trade finder's job (see reset_trades tool). The parameter is stored on the result for
+    # context and future composability.
     slates = rank_slates(valued_entries, n=top_n)
 
     total_value = sum(e.value.current or 0 for e in view.entries)
@@ -79,24 +83,25 @@ async def reset_optimizer(
                             - (r1_entry.value.current or 0),
                         )
                     )
-            # Detect TAXI swaps: players in rank-1 taxi but not this slate's taxi
+            # TAXI slot diffs
             r1_taxi_ids = {t.player.player_id for t in rank1.taxi}
             slate_taxi_ids = {t.player.player_id for t in slate.taxi}
-            taxi_id_to_entry = {t.player.player_id: t for t in rank1.taxi + slate.taxi}
-            for removed_id in r1_taxi_ids - slate_taxi_ids:
-                # find a player added in this slate that wasn't in rank1
-                added_ids = slate_taxi_ids - r1_taxi_ids
-                for added_id in sorted(added_ids):
+            if r1_taxi_ids != slate_taxi_ids:
+                # Build lookup maps for value_delta computation
+                rank1_taxi_map = {t.player.player_id: t for t in rank1.taxi}
+                slate_taxi_map = {t.player.player_id: t for t in slate.taxi}
+                removed = sorted(r1_taxi_ids - slate_taxi_ids)
+                added = sorted(slate_taxi_ids - r1_taxi_ids)
+                for removed_id, added_id in zip(removed, added):
                     swaps.append(
                         Swap(
                             slot=ProtectionSlot.TAXI,
                             from_player=removed_id,
                             to_player=added_id,
-                            value_delta=(taxi_id_to_entry[added_id].value.current or 0)
-                            - (taxi_id_to_entry[removed_id].value.current or 0),
+                            value_delta=(slate_taxi_map[added_id].value.current or 0)
+                            - (rank1_taxi_map[removed_id].value.current or 0),
                         )
                     )
-                    break  # one swap per removed player
         options.append(
             SlateOption(
                 rank=rank_idx,

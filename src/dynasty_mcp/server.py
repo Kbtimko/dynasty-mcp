@@ -10,6 +10,7 @@ from dynasty_mcp.tools.draft import get_draft as tool_get_draft
 from dynasty_mcp.tools.league import get_league_context as tool_get_league_context
 from dynasty_mcp.tools.matchups import get_matchup as tool_get_matchup
 from dynasty_mcp.tools.reset_optimizer import reset_optimizer as tool_reset_optimizer
+from dynasty_mcp.tools.reset_trades import reset_trades as tool_reset_trades
 from dynasty_mcp.tools.rosters import (
     get_roster as tool_get_roster,
     get_team_value_breakdown as tool_get_team_value_breakdown,
@@ -110,6 +111,33 @@ def build_server(ctx: Context) -> FastMCP:
                 ctx,
                 team=team,
                 reset_probability=reset_probability,
+                top_n=top_n,
+            )
+        ).model_dump(mode="json")
+
+    @mcp.tool()
+    async def reset_trades(
+        partner: str | int | None = None,
+        reset_probability: float = 0.0,
+        max_send: int = 2,
+        max_recv: int = 2,
+        min_edge: int = 500,
+        top_n: int = 10,
+    ) -> Any:
+        """Find mutually beneficial trades, weighted by reset probability.
+
+        Scans all 13 counterparties (or just `partner`) for 1-for-1 and 2-for-1
+        trades where both sides gain at least `min_edge` in reset-adjusted value.
+        Future-year picks are discounted by `reset_probability`.
+        """
+        return (
+            await tool_reset_trades(
+                ctx,
+                partner=partner,
+                reset_probability=reset_probability,
+                max_send=max_send,
+                max_recv=max_recv,
+                min_edge=min_edge,
                 top_n=top_n,
             )
         ).model_dump(mode="json")

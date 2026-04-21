@@ -66,3 +66,19 @@ async def test_live_reset_optimizer_returns_options(tmp_path: Path) -> None:
     assert result.options[0].protected_value > 0
     assert result.options == sorted(result.options, key=lambda o: o.protected_value, reverse=True)
     result.model_dump(mode="json")
+
+
+@pytest.mark.asyncio
+async def test_live_reset_trades_returns_result(tmp_path: Path) -> None:
+    from dynasty_mcp.tools.reset_trades import reset_trades
+
+    username = os.environ["SLEEPER_USERNAME"]
+    league_id = os.environ["SLEEPER_LEAGUE_ID"]
+    cache = Cache.open(tmp_path / "live.db")
+    ctx = build_test_context(
+        cache=cache, username=username, league_id=league_id, season=os.environ.get("SEASON", "2025")
+    )
+    result = await reset_trades(ctx, partner=1, min_edge=0, top_n=5)
+    assert isinstance(result.proposals, list)
+    assert result.considered_partners == [1]
+    result.model_dump(mode="json")

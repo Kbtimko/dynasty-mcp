@@ -133,7 +133,7 @@ class TradeAsset(BaseModel):
     display_name: str
     raw_value: int
     reset_adjusted_value: int
-    protectable_on_receiver: bool
+    protectable_on_receiver: bool  # False for picks
 
 
 class TradeProposal(BaseModel):

@@ -1,20 +1,19 @@
 # dynasty-mcp — Implementation Status
 
-## CURRENT STATE (2026-04-21)
+## CURRENT STATE (2026-04-22)
 
-**Branch:** `main` (v1 shipped + reset_optimizer merged)
+**Branch:** `main` (v1 shipped + reset_optimizer + reset_trades + HTTP transport merged)
 
-**Next task:** Tool-storage app scoping memo (`docs/decisions/`) or league-scoring-adjusted values spec — both need brainstorm first.
-
-**Uncommitted changes on main:**
-- `src/dynasty_mcp/__main__.py` + `tests/test_main.py` (TODO #1 NoneType fix)
-- `docs/superpowers/specs/2026-04-20-reset-tools-design.md`
-- `docs/superpowers/plans/2026-04-20-reset-optimizer.md`
+**Next task:** League-scoring-adjusted values — no spec yet; needs brainstorm session first.
 
 **Outstanding TODOs:**
-1. ✅ NoneType crash fix — done, uncommitted (commit first)
+1. ✅ NoneType crash fix — committed
 2. ✅ reset_trades — PR #2 merged
-3. 🔲 Tool-storage app scoping memo — no spec yet
+3. ✅ HTTP transport + Fly.io deploy — merged to main
+   - Live at: `https://dynasty-mcp.fly.dev/mcp`
+   - Registered as remote MCP connector on claude.ai
+   - VM: shared-cpu-1x, 512mb (256mb OOMs under load)
+   - Auto-stop enabled (spins down when idle, wakes on request ~3-5s cold start)
 4. 🔲 League-scoring-adjusted values — no spec yet
 
 **Quick resume:**

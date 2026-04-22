@@ -8,3 +8,9 @@ examples/
 *.md
 .git/
 .gitignore
+.env
+.env.*
+config.toml
+.claude/
+.worktrees/
+*.egg-info/

@@ -1,25 +1,47 @@
 # dynasty-mcp — Implementation Status
 
-## CURRENT STATE (2026-04-22)
+## CURRENT STATE (2026-04-21)
 
-**Branch:** `main` (v1 shipped + reset_optimizer + reset_trades + HTTP transport merged)
+**Branch:** `main`
 
-**Next task:** League-scoring-adjusted values — no spec yet; needs brainstorm session first.
+**Active work:** Building `dynasty-app` — a Next.js 16 web app that replaces the MCP server entirely. See `~/projects/dynasty-app/`.
 
-**Outstanding TODOs:**
-1. ✅ NoneType crash fix — committed
-2. ✅ reset_trades — PR #2 merged
-3. ✅ HTTP transport + Fly.io deploy — merged to main
-   - Live at: `https://dynasty-mcp.fly.dev/mcp`
-   - Registered as remote MCP connector on claude.ai
-   - VM: shared-cpu-1x, 512mb (256mb OOMs under load)
-   - Auto-stop enabled (spins down when idle, wakes on request ~3-5s cold start)
-4. 🔲 League-scoring-adjusted values — no spec yet
+**Fly.io status:** Still running — shut down once dynasty-app Phase 1 is verified on Vercel.
+
+**dynasty-app Phase 1 progress:**
+- ✅ Task 1: Scaffold (create-next-app, vitest, deps)
+- 🔲 Task 2: Types — `lib/types.ts`
+- 🔲 Task 3: Supabase schema + cache — `supabase-schema.sql`, `lib/cache.ts`
+- 🔲 Task 4: Sleeper client — `lib/sleeper.ts`
+- 🔲 Task 5: FantasyCalc client — `lib/fantasycalc.ts`
+- 🔲 Task 6: Reset scoring — `lib/utils.ts`, `lib/reset-scoring.ts`
+- 🔲 Task 7: Context + Roster tools — `lib/context.ts`, `lib/tools/rosters.ts`
+- 🔲 Task 8: Reset optimizer tool — `lib/tools/reset-optimizer.ts`
+- 🔲 Task 9: Reset trades tool — `lib/tools/reset-trades.ts`
+- 🔲 Task 10: AI helper — `lib/ai.ts`
+- 🔲 Task 11: Shared layout + components
+- 🔲 Task 12: Dashboard page
+- 🔲 Task 13: Reset Optimizer page
+- 🔲 Task 14: Reset Trades page
+- 🔲 Task 15: Team Value Breakdown page
+- 🔲 Task 16: Full test run + Vercel deploy
+
+**Key docs:**
+- Design spec: `docs/superpowers/specs/2026-04-21-dynasty-app-design.md`
+- Implementation plan: `docs/superpowers/plans/2026-04-21-dynasty-app.md`
+- New project: `~/projects/dynasty-app/`
 
 **Quick resume:**
 ```bash
-cd ~/projects/dynasty-mcp && git status && pytest -v
+cd ~/projects/dynasty-app && git log --oneline -3
+# Then: "continue dynasty-app subagent-driven development from Task 2"
 ```
+
+**Previous dynasty-mcp TODOs (superseded by dynasty-app):**
+1. ✅ NoneType crash fix
+2. ✅ reset_trades merged
+3. ✅ HTTP transport + Fly.io deploy (live at dynasty-mcp.fly.dev/mcp)
+4. 🔲 League-scoring-adjusted values — deferred; may become a toggle in dynasty-app Phase 2
 
 ---
 

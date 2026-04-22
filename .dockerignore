@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+docs/
+examples/
+*.md
+.git/
+.gitignore
+.env
+.env.*
+config.toml
+.claude/
+.worktrees/
+*.egg-info/

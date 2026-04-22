@@ -41,7 +41,10 @@ def main() -> None:
         username=config.sleeper_username, league_id=league_id, season=season,
     )
     server = build_server(ctx)
-    server.run()
+    if config.transport == "stdio":
+        server.run()
+    else:
+        server.run(transport=config.transport, host=config.host, port=config.port)
 
 
 if __name__ == "__main__":

@@ -9,3 +9,4 @@ build/
 .env
 *.db
 .worktrees/
+.claude/session-wrapped

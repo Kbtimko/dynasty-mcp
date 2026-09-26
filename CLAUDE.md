@@ -4,7 +4,7 @@ Local MCP server giving Claude access to Keith's Sleeper dynasty fantasy footbal
 
 ## Session start
 
-Read `NOTES.md` first — it has current state, outstanding work, and carry-forward items.
+Read `.claude/notes.md` first — it has current state, blockers, and the prioritized backlog.
 
 ## Adding a new MCP tool
 
@@ -27,6 +27,10 @@ For scoring rules, reset mechanics, TAXI rules, and roster context: [`docs/leagu
 
 Load this when doing strategy or advisory work. Skip it for infrastructure tasks (cache, config, tests).
 
+## Database
+
+If any tool or feature needs persistent storage, use **Neon Postgres** (not Supabase). Neon project: create one at neon.tech when needed. Use `@neondatabase/serverless` for the client in Next.js contexts; use `psycopg2` or `asyncpg` in Python.
+
 ## Key files
 
 | File | Purpose |
@@ -36,6 +40,16 @@ Load this when doing strategy or advisory work. Skip it for infrastructure tasks
 | `src/dynasty_mcp/reset_scoring.py` | Pure reset math (no I/O) |
 | `src/dynasty_mcp/tools/` | One file per tool group |
 | `src/dynasty_mcp/sources/` | Sleeper + FantasyCalc API clients |
-| `NOTES.md` | Session log + current state |
+| `.claude/notes.md` | Current state, blockers, prioritized backlog |
+| `.claude/sessions/` | Per-session journal, one file per session |
+| `SESSION_NOTES.md` | Frozen archive — historical reference only |
+| `STATUS.md` | Frozen archive — historical reference only |
 
 **Don't load without a reason:** `tests/fixtures/*.json` — large recorded API responses; only useful when debugging specific fixture data.
+
+## Definition of Done
+
+Before declaring any fix complete:
+- Enumerate the edge cases the change must handle (missing/zero values, empty sets, excluded/filtered records, boundary & off-by-one cases) and confirm each is covered — make the enumeration visible, not implicit.
+- Validate behavior against the real data source or live app, not just unit tests — a green test is not a working feature.
+- Name the root cause, not just the surface patch; if the fix papers over a deeper data/pipeline gap, say so.
